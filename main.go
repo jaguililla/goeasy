@@ -17,6 +17,7 @@ func main() {
 	http.ListenAndServe(":8000", r)
 }
 
+// Callback Route callback type
 type Callback func(http.ResponseWriter, *http.Request)
 
 func get(router *mux.Router, block Callback) {

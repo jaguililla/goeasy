@@ -1,3 +1,7 @@
-github.com/jaguililla/goeasy
+
+# Glide Dependencies
 vendor/
 glide.lock
+
+# Output Binaries
+goeasy
