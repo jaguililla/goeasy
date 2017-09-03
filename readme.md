@@ -3,6 +3,7 @@ Templates in: dirs, URLs, Maven deps
 Take vars/data from: yaml, json, command line params/query params, ask at input/HTML form
 Data fetchers: dir, file, url
 Processors: command line and HTTP
+  For command line check: https://godoc.org/github.com/pborman/getopt
 Hooks (to create Bitbucket repos, JIRA projects...)
 Data/content in dir
 Used data stored in .data
