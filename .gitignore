@@ -4,4 +4,4 @@ vendor/
 glide.lock
 
 # Output Binaries
-goeasy
+goeasy*
