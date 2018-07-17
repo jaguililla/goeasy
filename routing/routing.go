@@ -7,6 +7,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
+type muxCallback func(http.ResponseWriter, *http.Request)
+
 // Call .
 type Call struct {
 	writer  http.ResponseWriter
@@ -15,18 +17,24 @@ type Call struct {
 
 // Response .
 type Response struct {
-	code        int
-	body        string
-	contentType string
+	Code        int
+	Body        string
+	ContentType string
 }
 
 // Callback .
-type Callback func(http.ResponseWriter, *http.Request)
+type Callback func(Call) (Response, error)
 
-// Callback2 .
-type Callback2 func(Call) (Response, error)
-
-func (cb Callback2) ServeHTTP(http.ResponseWriter, *http.Request) {}
+func (callback Callback) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	if response, err := callback(Call{writer, request}); err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		writer.Write([]byte(err.Error()))
+	} else {
+		writer.WriteHeader(response.Code)
+		writer.Header().Set("Content-Type", response.ContentType)
+		fmt.Fprintln(writer, response.Body)
+	}
+}
 
 // HTTPRouter .
 type HTTPRouter struct {
@@ -49,38 +57,53 @@ func (router HTTPRouter) Subrouter(path string) HTTPRouter {
 }
 
 // Get .
-func (router HTTPRouter) Get(block Callback) {
-	router.HandleFunc("", block).Methods("GET")
+func (router HTTPRouter) Get(block Callback) *mux.Route {
+	return router.Handle("", block).Methods("GET")
 }
 
 // Put .
-func (router HTTPRouter) Put(block Callback) {
-	router.HandleFunc("", block).Methods("PUT")
+func (router HTTPRouter) Put(block Callback) *mux.Route {
+	return router.Handle("", block).Methods("PUT")
 }
 
 // All .
-func (router HTTPRouter) All(block Callback) {
-	router.HandleFunc("", block)
+func (router HTTPRouter) All(block Callback) *mux.Route {
+	return router.Handle("", block)
 }
 
 // PathGet .
-func (router HTTPRouter) PathGet(path string, block Callback) {
-	router.HandleFunc(path, block).Methods("GET")
+func (router HTTPRouter) PathGet(path string, block Callback) *mux.Route {
+	return router.Handle(path, block).Methods("GET")
 }
 
 // PathPut .
-func (router HTTPRouter) PathPut(path string, block Callback) {
-	router.HandleFunc(path, block).Methods("PUT")
+func (router HTTPRouter) PathPut(path string, block Callback) *mux.Route {
+	return router.Handle(path, block).Methods("PUT")
 }
 
 // PathAll .
-func (router HTTPRouter) PathAll(path string, block Callback) {
-	router.HandleFunc(path, block)
+func (router HTTPRouter) PathAll(path string, block Callback) *mux.Route {
+	return router.Handle(path, block)
+}
+
+// Reply .
+func Reply(message Response) Callback {
+	return func(c Call) (Response, error) {
+		return message, nil
+	}
+}
+
+// Code .
+func Code(code int) Callback {
+	return Reply(Response{Code: code})
 }
 
 // Body .
-func Body(message string) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, message)
-	}
+func Body(message string) Callback {
+	return Reply(Response{Code: 200, Body: message})
+}
+
+// CodeAndBody .
+func CodeAndBody(code int, message string) Callback {
+	return Reply(Response{Code: code, Body: message})
 }

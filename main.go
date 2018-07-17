@@ -1,24 +1,24 @@
 package main
 
 import (
-	"net/http"
-
-	"github.com/jaguililla/goeasy/routing"
+	r "github.com/jaguililla/goeasy/routing"
 )
 
 func main() {
-	router := routing.Router()
+	router := r.Router()
+
+	router.PathGet("/other", r.Body("Other"))
+	router.PathGet("/root", r.Body("Rooted"))
 
 	prefix := router.Subrouter("/prefix")
-	prefix.Put(routing.Body("foo"))
-	prefix.All(routing.Body("405 invalid method"))
-	prefix.PathPut("/pput", hnd)
 
-	router.PathGet("/other", routing.Body("Other"))
-	router.All(routing.Body("999"))
+	prefix.Put(r.Body("foo"))
+	prefix.PathPut("/put", r.CodeAndBody(200, "response"))
+	prefix.PathGet("/matched", func(r.Call) (r.Response, error) {
+		return r.Response{Code: 200, Body: "Matched!"}, nil
+	})
+
+	prefix.All(r.CodeAndBody(405, "Invalid method"))
 
 	router.Serve(":8000")
-}
-
-func hnd(w http.ResponseWriter, r *http.Request) {
 }
